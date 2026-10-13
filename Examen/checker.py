@@ -33,6 +33,11 @@ def build_url(host, path):
     if path.startswith("/"):
         build = host + path
     else: build = host + "/" + path
+    return build
+
+# print(build_url("https://example.com", "/path"))
+# print(build_url("https://example.com", "path"))
+
 
 
 def is_https(url):
@@ -41,16 +46,30 @@ def is_https(url):
         return True
     else : return False
 
+# print(is_https("https://example.com"))
+# print(is_https("http://example.com"))
+
 
 def show_response(url):
     """Trimite un GET la url și afișează statusul și Content-Type."""
     r = requests.get(url)
-    return r.status_code
+    return r.status_code, r.headers['content-type']
+
+# print(show_response("https://example.com"))
 
 
 def check_site(url):
     """Returnează un dicționar cu: status, content_type, length, server."""
-    pass
+    r = requests.get(url, timeout=5)
+    d = {
+        "status" : r.status_code,
+        "content_type" : r.headers['content-type'],
+        "length" : len(r.content),
+        "server" : r.headers['server']
+    }
+    return d
+
+# print(check_site("https://example.com"))
 
 
 def scan_sites():
@@ -60,9 +79,31 @@ def scan_sites():
 
 def check_headers(url):
     """Returnează un dicționar cu: present, missing, score."""
-    pass
+    response = requests.get(url, timeout=5)
+    present = []
+    missing = []
+    for header in SECURITY_HEADERS:
+        if header in response.headers:
+            present.append(header)
+        else:
+            missing.append(header)
+    scor = len(present) / len(SECURITY_HEADERS) * 100
+    return {"present": present, "missing": missing, "scor": scor}
+
+# print(check_headers("https://example.com"))
+
+
 
 
 def retry_check(url, attempts=3):
     """Încearcă de cel mult `attempts` ori; returnează un dicționar cu: status, attempts."""
-    pass
+    for i in range(attempts):
+        try:
+            response = requests.get(url, timeout=5)
+            return {"status": response.status_code, "attempts": i+1}
+        except requests.RequestException:
+            continue
+    return {"status": None, "attempts": attempts}
+
+# print(retry_check("https://example.com", 5))
+
